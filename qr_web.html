@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Craft Pro - Tạo Mã QR Văn Bản & Hình Ảnh</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- QRCode Styling JS Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-input {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glass-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+    }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
+
+  <!-- Background Glow Effects -->
+  <div class="fixed top-0 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse"></div>
+  <div class="fixed bottom-10 right-10 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+  <div class="fixed top-1/2 right-1/3 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+  <!-- Toast Notification System Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Main Wrapper -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Header / Navbar -->
+    <header class="glass-card rounded-2xl p-4 sm:p-5 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-indigo-500/30">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+            QR Craft Pro
+          </h1>
+          <p class="text-xs text-slate-400">Trình tạo mã QR chuyên nghiệp từ Văn bản & Hình ảnh</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs sm:text-sm font-medium">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          100% Miễn phí & Bảo mật
+        </span>
+        <button id="btn-reset-all" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-2 border border-slate-700">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Làm mới</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- LEFT COLUMN: Inputs & Customizations (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col gap-6">
+
+        <!-- Tab Switcher (Text/URL vs Image) -->
+        <div class="glass-card p-1.5 rounded-2xl flex gap-2">
+          <button id="tab-btn-text" onclick="switchTab('text')" class="flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2.5 bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">
+            <i class="fa-solid fa-font text-base"></i>
+            <span>Văn bản / Liên kết</span>
+          </button>
+          <button id="tab-btn-image" onclick="switchTab('image')" class="flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2.5 text-slate-400 hover:text-white hover:bg-slate-800/50">
+            <i class="fa-solid fa-image text-base"></i>
+            <span>Hình ảnh (Image)</span>
+          </button>
+        </div>
+
+        <!-- TAB 1 CONTENT: TEXT / URL -->
+        <div id="tab-content-text" class="glass-card rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col gap-5">
+          <!-- Preset Type Selector -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
+              Chọn mẫu dữ liệu nhanh
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <button onclick="setTextPreset('url')" id="preset-url" class="preset-btn px-3 py-2 rounded-xl text-xs font-medium bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-link"></i> Website URL
+              </button>
+              <button onclick="setTextPreset('text')" id="preset-text" class="preset-btn px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700/60 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-align-left"></i> Văn bản
+              </button>
+              <button onclick="setTextPreset('wifi')" id="preset-wifi" class="preset-btn px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700/60 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-wifi"></i> Mã Wi-Fi
+              </button>
+              <button onclick="setTextPreset('vcard')" id="preset-vcard" class="preset-btn px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700/60 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-id-card"></i> Danh thiếp
+              </button>
+              <button onclick="setTextPreset('email')" id="preset-email" class="preset-btn px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700/60 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5 col-span-2 sm:col-span-1">
+                <i class="fa-solid fa-envelope"></i> Email
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Form Area -->
+          <div id="dynamic-text-form" class="flex flex-col gap-4">
+            <!-- URL Form (Default) -->
+            <div id="form-group-url" class="flex flex-col gap-2">
+              <label class="text-xs font-medium text-slate-300">Đường dẫn Website (URL)</label>
+              <div class="relative">
+                <span class="absolute left-3.5 top-3.5 text-slate-400 text-sm"><i class="fa-solid fa-globe"></i></span>
+                <input type="url" id="input-url" placeholder="https://vd: example.com hoặc https://zalo.me/..." value="https://google.com" oninput="handleTextFormChange()" class="w-full glass-input rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none transition-all">
+              </div>
+            </div>
+
+            <!-- Plain Text Form -->
+            <div id="form-group-text" class="hidden flex-col gap-2">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-medium text-slate-300">Nội dung văn bản</label>
+                <span id="text-char-count" class="text-[11px] text-slate-500">0 ký tự</span>
+              </div>
+              <textarea id="input-text" rows="4" placeholder="Nhập ghi chú, thông điệp, văn bản bất kỳ tại đây..." oninput="handleTextFormChange()" class="w-full glass-input rounded-xl p-3.5 text-sm text-white focus:outline-none transition-all resize-y"></textarea>
+            </div>
+
+            <!-- Wi-Fi Form -->
+            <div id="form-group-wifi" class="hidden grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="sm:col-span-2">
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Tên Mạng Wi-Fi (SSID)</label>
+                <input type="text" id="wifi-ssid" placeholder="Nhập tên Wi-Fi nhà bạn" oninput="handleWifiChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Mật khẩu Wi-Fi</label>
+                <input type="password" id="wifi-password" placeholder="Mật khẩu" oninput="handleWifiChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Loại bảo mật</label>
+                <select id="wifi-type" onchange="handleWifiChange()" class="w-full glass-input rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none bg-slate-900">
+                  <option value="WPA">WPA/WPA2/WPA3</option>
+                  <option value="WEP">WEP</option>
+                  <option value="nopass">Không mật khẩu (Mở)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- vCard Form -->
+            <div id="form-group-vcard" class="hidden grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Họ và Tên</label>
+                <input type="text" id="vcard-name" placeholder="Nguyễn Văn A" oninput="handleVCardChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Số điện thoại</label>
+                <input type="tel" id="vcard-phone" placeholder="0901234567" oninput="handleVCardChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Email</label>
+                <input type="email" id="vcard-email" placeholder="example@gmail.com" oninput="handleVCardChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Công ty / Chức danh</label>
+                <input type="text" id="vcard-org" placeholder="Công ty XYZ" oninput="handleVCardChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Email Form -->
+            <div id="form-group-email" class="hidden flex-col gap-3">
+              <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Địa chỉ Email nhận</label>
+                <input type="email" id="email-to" placeholder="nguoinhan@gmail.com" oninput="handleEmailChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Tiêu đề Email</label>
+                <input type="text" id="email-subject" placeholder="Tiêu đề thư" oninput="handleEmailChange()" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2 CONTENT: IMAGE UPLOAD -->
+        <div id="tab-content-image" class="hidden glass-card rounded-2xl p-5 sm:p-6 shadow-xl flex-col gap-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-sm text-slate-200">Mã hóa Hình ảnh thành QR</h3>
+              <p class="text-xs text-slate-400">Tải ảnh lên mây hoặc mã hóa trực tiếp dạng Base64</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Image Engine
+            </span>
+          </div>
+
+          <!-- Drag and Drop Dropzone -->
+          <div id="dropzone" onclick="document.getElementById('file-input-image').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-900/50 hover:bg-indigo-950/20 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group">
+            <input type="file" id="file-input-image" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+            <div class="w-14 h-14 rounded-2xl bg-slate-800 group-hover:bg-indigo-600/20 text-slate-400 group-hover:text-indigo-400 flex items-center justify-center text-2xl transition-all shadow-md">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-slate-200 group-hover:text-indigo-300">Nhấp để chọn ảnh hoặc kéo thả vào đây</p>
+              <p class="text-xs text-slate-400 mt-1">Hỗ trợ JPG, PNG, WEBP, GIF (Tối đa 10MB)</p>
+            </div>
+          </div>
+
+          <!-- Selected Image Preview & Settings -->
+          <div id="image-preview-container" class="hidden flex-col gap-4 bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <div class="flex items-center gap-4">
+              <img id="img-preview-thumb" src="" alt="Preview" class="w-16 h-16 rounded-lg object-cover border border-slate-700 shadow-md">
+              <div class="flex-1 min-w-0">
+                <p id="img-file-name" class="text-sm font-semibold text-slate-200 truncate">filename.jpg</p>
+                <p id="img-file-info" class="text-xs text-slate-400 mt-0.5">0 KB • 0x0 px</p>
+                <!-- Mode Badge -->
+                <div class="mt-1 flex items-center gap-2">
+                  <span id="upload-status-badge" class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300">
+                    Chưa tải lên
+                  </span>
+                </div>
+              </div>
+              <button onclick="clearSelectedImage()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <!-- Image Processing Mode Switcher -->
+            <div class="pt-3 border-t border-slate-800 flex flex-col gap-3">
+              <label class="text-xs font-medium text-slate-300">Chế độ tạo mã QR cho ảnh:</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 cursor-pointer hover:border-indigo-500 transition-all">
+                  <input type="radio" name="image-mode" value="cloud" checked onchange="handleImageModeChange()" class="mt-1 text-indigo-600 focus:ring-0">
+                  <div>
+                    <span class="text-xs font-semibold text-white block">1. Tải lên Cloud (Khuyên dùng)</span>
+                    <span class="text-[11px] text-slate-400 block leading-tight">Tạo URL ngắn, QR đơn giản, dễ quét từ xa bằng mọi điện thoại.</span>
+                  </div>
+                </label>
+                <label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 cursor-pointer hover:border-indigo-500 transition-all">
+                  <input type="radio" name="image-mode" value="offline" onchange="handleImageModeChange()" class="mt-1 text-indigo-600 focus:ring-0">
+                  <div>
+                    <span class="text-xs font-semibold text-white block">2. Nén & Nhúng trực tiếp (Offline)</span>
+                    <span class="text-[11px] text-slate-400 block leading-tight">Mã hóa Data URL trực tiếp, không cần server cloud nhưng mã QR dày.</span>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Upload Button for Cloud mode -->
+              <div id="cloud-upload-action" class="mt-1">
+                <button id="btn-start-upload" onclick="uploadImageToCloud()" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <span>Tải ảnh lên Server Miễn phí & Tạo QR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CUSTOMIZATION PANEL (Accordion/Sections) -->
+        <div class="glass-card rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col gap-6">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-indigo-400"></i>
+              <span>Tùy chỉnh Giao diện Mã QR</span>
+            </h3>
+            <span class="text-xs text-slate-400">Cá nhân hóa thiết kế</span>
+          </div>
+
+          <!-- Color Presets -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Bảng màu gợi ý
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="applyColorPreset('#000000', '#ffffff')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-black border border-white"></span> Đen Trắng
+              </button>
+              <button onclick="applyColorPreset('#4f46e5', '#ffffff')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-indigo-600"></span> Indigo Classic
+              </button>
+              <button onclick="applyColorPreset('#059669', '#f0fdf4')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-emerald-600"></span> Emerald Mint
+              </button>
+              <button onclick="applyColorPreset('#ea580c', '#fff7ed')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-orange-600"></span> Sunset Gold
+              </button>
+              <button onclick="applyColorPreset('#38bdf8', '#0f172a')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-sky-400"></span> Cyber Dark
+              </button>
+            </div>
+          </div>
+
+          <!-- Color Custom Pickers & Style -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Foreground Color -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-slate-300">Màu nét vẽ (Foreground)</label>
+              <div class="flex items-center gap-2">
+                <input type="color" id="qr-color-fg" value="#000000" onchange="updateQRCode()" class="w-10 h-10 rounded-xl bg-transparent border border-slate-700 cursor-pointer">
+                <input type="text" id="qr-color-fg-hex" value="#000000" oninput="syncColorInput('fg')" class="flex-1 glass-input rounded-xl px-3 py-2 text-xs text-white uppercase font-mono">
+              </div>
+            </div>
+
+            <!-- Background Color -->
+            <div class="flex flex-col gap-1.5">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-medium text-slate-300">Màu nền (Background)</label>
+                <label class="text-[11px] text-slate-400 flex items-center gap-1 cursor-pointer">
+                  <input type="checkbox" id="qr-bg-transparent" onchange="updateQRCode()" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0"> Trong suốt
+                </label>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="color" id="qr-color-bg" value="#ffffff" onchange="updateQRCode()" class="w-10 h-10 rounded-xl bg-transparent border border-slate-700 cursor-pointer">
+                <input type="text" id="qr-color-bg-hex" value="#ffffff" oninput="syncColorInput('bg')" class="flex-1 glass-input rounded-xl px-3 py-2 text-xs text-white uppercase font-mono">
+              </div>
+            </div>
+
+            <!-- Dot Pattern Style -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-slate-300">Kiểu dáng chấm (Dots Pattern)</label>
+              <select id="qr-dot-style" onchange="updateQRCode()" class="glass-input rounded-xl px-3 py-2 text-xs text-white focus:outline-none bg-slate-900">
+                <option value="square">Vuông truyền thống (Square)</option>
+                <option value="dots">Chấm tròn (Dots)</option>
+                <option value="rounded" selected>Bo tròn (Rounded)</option>
+                <option value="classy">Sang trọng (Classy)</option>
+                <option value="extra-rounded">Siêu bo tròn (Extra Rounded)</option>
+              </select>
+            </div>
+
+            <!-- Error Correction Level -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-slate-300">Mức sửa lỗi (Error Correction)</label>
+              <select id="qr-ec-level" onchange="updateQRCode()" class="glass-input rounded-xl px-3 py-2 text-xs text-white focus:outline-none bg-slate-900">
+                <option value="L">Thấp - L (Phù hợp text ngắn)</option>
+                <option value="M">Trung bình - M (15%)</option>
+                <option value="Q">Cao - Q (25%)</option>
+                <option value="H" selected>Tối đa - H (30% - NÊN DÙNG KHI CÓ LOGO)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Logo Picker -->
+          <div class="border-t border-slate-800 pt-4 flex flex-col gap-3">
+            <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span>Chèn Logo trung tâm</span>
+              <span class="text-[11px] text-indigo-400 font-normal">Tùy chọn bổ sung</span>
+            </label>
+
+            <!-- Pre-defined Logos -->
+            <div class="flex flex-wrap gap-2 items-center">
+              <button onclick="setLogoPreset('none')" id="logo-preset-none" class="logo-btn px-3 py-1.5 rounded-lg text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30">Không logo</button>
+              <button onclick="setLogoPreset('link')" id="logo-preset-link" class="logo-btn px-3 py-1.5 rounded-lg text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700"><i class="fa-solid fa-link"></i> Link</button>
+              <button onclick="setLogoPreset('wifi')" id="logo-preset-wifi" class="logo-btn px-3 py-1.5 rounded-lg text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700"><i class="fa-solid fa-wifi"></i> Wifi</button>
+              <button onclick="setLogoPreset('user')" id="logo-preset-user" class="logo-btn px-3 py-1.5 rounded-lg text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700"><i class="fa-solid fa-user"></i> User</button>
+              <button onclick="setLogoPreset('heart')" id="logo-preset-heart" class="logo-btn px-3 py-1.5 rounded-lg text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700"><i class="fa-solid fa-heart text-rose-500"></i> Heart</button>
+
+              <!-- Custom Logo File Upload -->
+              <label class="px-3 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-upload"></i> Tải logo từ máy
+                <input type="file" id="custom-logo-input" accept="image/*" class="hidden" onchange="handleCustomLogoUpload(event)">
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Sticky Live Preview & Action Controls (5 cols) -->
+      <div class="lg:col-span-5 flex flex-col gap-6">
+
+        <div class="sticky top-6 flex flex-col gap-6">
+
+          <!-- QR Preview Box Container -->
+          <div class="glass-card rounded-2xl p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden group">
+            
+            <!-- Live Status Tag -->
+            <div class="w-full flex items-center justify-between mb-4">
+              <span class="text-xs font-semibold text-slate-400 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                Xem trước Thời gian thực
+              </span>
+              <span id="scanability-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Khả năng quét: Khá tốt
+              </span>
+            </div>
+
+            <!-- Canvas Wrapper -->
+            <div class="p-4 bg-white rounded-2xl shadow-2xl border border-slate-200/20 flex items-center justify-center transition-all transform group-hover:scale-[1.02]" id="qr-canvas-wrapper">
+              <!-- QR Code JS Canvas appends here -->
+            </div>
+
+            <!-- Details Snippet -->
+            <div class="mt-4 w-full text-center">
+              <p id="qr-data-preview-text" class="text-xs text-slate-400 truncate max-w-xs mx-auto">https://google.com</p>
+              <p id="qr-data-size-info" class="text-[11px] text-slate-500 mt-0.5">Dung lượng: 18 ký tự</p>
+            </div>
+
+            <!-- Size Selection Grid -->
+            <div class="mt-5 w-full flex items-center justify-between pt-4 border-t border-slate-800">
+              <span class="text-xs text-slate-400 font-medium">Kích thước Xuất:</span>
+              <div class="flex items-center gap-1">
+                <button onclick="setExportSize(256)" id="size-btn-256" class="size-btn px-2.5 py-1 rounded-lg text-xs bg-slate-800 text-slate-400 border border-slate-700">256px</button>
+                <button onclick="setExportSize(512)" id="size-btn-512" class="size-btn px-2.5 py-1 rounded-lg text-xs bg-indigo-600 text-white font-semibold shadow border border-indigo-500">512px</button>
+                <button onclick="setExportSize(1024)" id="size-btn-1024" class="size-btn px-2.5 py-1 rounded-lg text-xs bg-slate-800 text-slate-400 border border-slate-700">1024px</button>
+              </div>
+            </div>
+
+            <!-- Action Buttons Grid -->
+            <div class="mt-5 w-full grid grid-cols-2 gap-3">
+              <button onclick="downloadQR('png')" class="py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 active:scale-95">
+                <i class="fa-solid fa-download"></i>
+                <span>Tải Mã QR (PNG)</span>
+              </button>
+
+              <button onclick="downloadQR('svg')" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 active:scale-95">
+                <i class="fa-solid fa-file-code"></i>
+                <span>Tải File SVG</span>
+              </button>
+
+              <button onclick="copyQRImageToClipboard()" class="py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-xs font-medium transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-copy"></i>
+                <span>Sao chép Ảnh</span>
+              </button>
+
+              <button onclick="copyContentToClipboard()" class="py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-xs font-medium transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-link"></i>
+                <span>Sao chép Chuỗi</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- History Accordion Card -->
+          <div class="glass-card rounded-2xl p-5 shadow-xl flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-xs text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+                <span>Lịch sử Tạo QR Gần đây</span>
+              </h3>
+              <button onclick="clearHistory()" class="text-[11px] text-rose-400 hover:text-rose-300 hover:underline">Xóa tất cả</button>
+            </div>
+
+            <!-- History List Container -->
+            <div id="history-list" class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+              <!-- Rendered via JS -->
+              <p id="history-empty-text" class="text-xs text-slate-500 py-3 text-center italic">Chưa có lịch sử tạo mã QR nào.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-xs text-slate-500 py-6 border-t border-slate-900">
+      <p>© 2026 QR Craft Pro • Xây dựng ứng dụng chuyển đổi Mã QR hiện đại & An toàn dữ liệu</p>
+    </footer>
+
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Global Application State
+    const appState = {
+      activeTab: 'text', // 'text' | 'image'
+      textPreset: 'url', // 'url' | 'text' | 'wifi' | 'vcard' | 'email'
+      rawContent: 'https://google.com',
+      exportSize: 512,
+      
+      // QR Style Options
+      fgColor: '#000000',
+      bgColor: '#ffffff',
+      isBgTransparent: false,
+      dotStyle: 'rounded',
+      ecLevel: 'H',
+      logoUrl: '',
+      
+      // Image Processing State
+      selectedImageFile: null,
+      imageMode: 'cloud', // 'cloud' | 'offline'
+      uploadedCloudUrl: '',
+      
+      // History List
+      history: []
+    };
+
+    // Global QR Instance
+    let qrCodeStyling = null;
+
+    // Default Logo Preset SVG Icons (Base64 data URIs for clean reliability)
+    const LOGO_PRESETS = {
+      link: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%234f46e5'><path d='M352 320c-22.6 0-43.3 9.3-58.3 24.3l-109.4-62.5c2.3-7.1 3.7-14.7 3.7-22.5s-1.4-15.4-3.7-22.5L293.7 174.3c15 15 35.7 24.3 58.3 24.3 44.2 0 80-35.8 80-80s-35.8-80-80-80-80 35.8-80 80c0 7.8 1.4 15.4 3.7 22.5L166.3 203.7c-15-15-35.7-24.3-58.3-24.3-44.2 0-80 35.8-80 80s35.8 80 80 80c22.6 0 43.3-9.3 58.3-24.3l109.4 62.5c-2.3 7.1-3.7 14.7-3.7 22.5 0 44.2 35.8 80 80 80s80-35.8 80-80-35.8-80-80-80z'/></svg>",
+      wifi: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512' fill='%234f46e5'><path d='M634.91 154.88C457.74-8.99 182.19-8.93 5.09 154.88c-6.78 6.24-6.78 16.36 0 22.6l45.25 41.69c6.78 6.24 17.79 6.24 24.57 0 143.24-131.85 365.17-131.85 508.41 0 6.78 6.24 17.79 6.24 24.57 0l45.25-41.69c6.78-6.24 6.78-16.36 0-22.6zm-101.8 93.82c-117.4-108.08-298.82-108.08-416.22 0-6.78 6.24-6.78 16.36 0 22.6l45.25 41.69c6.78 6.24 17.79 6.24 24.57 0 83.18-76.58 211.96-76.58 295.14 0 6.78 6.24 17.79 6.24 24.57 0l45.25-41.69c6.78-6.24 6.78-16.36 0-22.6zM320 352c-35.35 0-64 28.65-64 64s28.65 64 64 64 64-28.65 64-64-28.65-64-64-64z'/></svg>",
+      user: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512' fill='%234f46e5'><path d='M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z'/></svg>",
+      heart: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23e11d48'><path d='M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z'/></svg>"
+    };
+
+    // Initialize Application
+    window.onload = function() {
+      initQRCodeInstance();
+      loadHistoryFromStorage();
+      bindEvents();
+      updateQRCode();
+    };
+
+    // Instantiate QRCodeStyling Library
+    function initQRCodeInstance() {
+      qrCodeStyling = new QRCodeStyling({
+        width: 260,
+        height: 260,
+        type: "canvas",
+        data: appState.rawContent,
+        image: appState.logoUrl,
+        dotsOptions: {
+          color: appState.fgColor,
+          type: appState.dotStyle
+        },
+        backgroundOptions: {
+          color: appState.isBgTransparent ? "transparent" : appState.bgColor,
+        },
+        imageOptions: {
+          crossOrigin: "anonymous",
+          margin: 6,
+          imageSize: 0.22
+        },
+        qrOptions: {
+          errorCorrectionLevel: appState.ecLevel
+        }
+      });
+
+      const wrapper = document.getElementById("qr-canvas-wrapper");
+      wrapper.innerHTML = "";
+      qrCodeStyling.append(wrapper);
+    }
+
+    // Bind UI Event Listeners
+    function bindEvents() {
+      document.getElementById('btn-reset-all').addEventListener('click', resetAllFields);
+    }
+
+    // Switch between Text/URL and Image tabs
+    function switchTab(tab) {
+      appState.activeTab = tab;
+      
+      const btnText = document.getElementById('tab-btn-text');
+      const btnImg = document.getElementById('tab-btn-image');
+      const contentText = document.getElementById('tab-content-text');
+      const contentImg = document.getElementById('tab-content-image');
+
+      if (tab === 'text') {
+        btnText.className = "flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2.5 bg-indigo-600 text-white shadow-lg shadow-indigo-600/30";
+        btnImg.className = "flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2.5 text-slate-400 hover:text-white hover:bg-slate-800/50";
+        contentText.classList.remove('hidden');
+        contentImg.classList.add('hidden');
+        contentImg.classList.remove('flex');
+        handleTextFormChange();
+      } else {
+        btnImg.className = "flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2.5 bg-indigo-600 text-white shadow-lg shadow-indigo-600/30";
+        btnText.className = "flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2.5 text-slate-400 hover:text-white hover:bg-slate-800/50";
+        contentImg.classList.remove('hidden');
+        contentImg.classList.add('flex');
+        contentText.classList.add('hidden');
+        handleImageTabUpdate();
+      }
+    }
+
+    // Set Text Preset Type
+    function setTextPreset(preset) {
+      appState.textPreset = preset;
+
+      // Toggle preset button styles
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.className = "preset-btn px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700/60 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5";
+      });
+      const activeBtn = document.getElementById(`preset-${preset}`);
+      if(activeBtn) {
+        activeBtn.className = "preset-btn px-3 py-2 rounded-xl text-xs font-medium bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition-all flex items-center justify-center gap-1.5";
+      }
+
+      // Hide all forms
+      ['url', 'text', 'wifi', 'vcard', 'email'].forEach(id => {
+        const el = document.getElementById(`form-group-${id}`);
+        if(el) {
+          el.classList.add('hidden');
+          el.classList.remove('flex', 'grid');
+        }
+      });
+
+      // Show selected form
+      const target = document.getElementById(`form-group-${preset}`);
+      if(target) {
+        if(preset === 'wifi' || preset === 'vcard') {
+          target.classList.remove('hidden');
+          target.classList.add('grid');
+        } else {
+          target.classList.remove('hidden');
+          target.classList.add('flex');
+        }
+      }
+
+      handleTextFormChange();
+    }
+
+    // Handle Form Change for Text/URL Input
+    function handleTextFormChange() {
+      let content = "";
+      const preset = appState.textPreset;
+
+      if (preset === 'url') {
+        content = document.getElementById('input-url').value.trim();
+        if(!content) content = "https://example.com";
+      } else if (preset === 'text') {
+        const txt = document.getElementById('input-text').value;
+        content = txt || "Xin chào, đây là mã QR văn bản!";
+        document.getElementById('text-char-count').innerText = `${txt.length} ký tự`;
+      } else if (preset === 'wifi') {
+        content = generateWifiString();
+      } else if (preset === 'vcard') {
+        content = generateVCardString();
+      } else if (preset === 'email') {
+        content = generateEmailString();
+      }
+
+      appState.rawContent = content;
+      updateQRCode();
+    }
+
+    function handleWifiChange() { handleTextFormChange(); }
+    function handleVCardChange() { handleTextFormChange(); }
+    function handleEmailChange() { handleTextFormChange(); }
+
+    function generateWifiString() {
+      const ssid = document.getElementById('wifi-ssid').value || "MyWifiNetwork";
+      const pass = document.getElementById('wifi-password').value || "";
+      const type = document.getElementById('wifi-type').value || "WPA";
+      return `WIFI:S:${ssid};T:${type};P:${pass};;`;
+    }
+
+    function generateVCardString() {
+      const name = document.getElementById('vcard-name').value || "Nguyen Van A";
+      const phone = document.getElementById('vcard-phone').value || "0901234567";
+      const email = document.getElementById('vcard-email').value || "example@gmail.com";
+      const org = document.getElementById('vcard-org').value || "Company";
+      return `BEGIN:VCARD\nVERSION:3.0\nN:${name}\nTEL:${phone}\nEMAIL:${email}\nORG:${org}\nEND:VCARD`;
+    }
+
+    function generateEmailString() {
+      const to = document.getElementById('email-to').value || "example@gmail.com";
+      const sub = document.getElementById('email-subject').value || "Lien he";
+      return `mailto:${to}?subject=${encodeURIComponent(sub)}`;
+    }
+
+    // IMAGE TAB HANDLERS
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('dropzone').classList.add('border-indigo-500', 'bg-indigo-950/30');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      document.getElementById('dropzone').classList.remove('border-indigo-500', 'bg-indigo-950/30');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      handleDragLeave(e);
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        processImageFile(e.dataTransfer.files[0]);
+      }
+    }
+
+    function handleImageSelect(e) {
+      if (e.target.files && e.target.files[0]) {
+        processImageFile(e.target.files[0]);
+      }
+    }
+
+    function processImageFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast("Vui lòng chọn tập tin hình ảnh hợp lệ (PNG, JPG, WEBP)!", "error");
+        return;
+      }
+
+      appState.selectedImageFile = file;
+      appState.uploadedCloudUrl = '';
+
+      // Display Preview Info
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('img-preview-thumb').src = evt.target.result;
+        document.getElementById('img-file-name').innerText = file.name;
+        document.getElementById('img-file-info').innerText = `${(file.size / 1024).toFixed(1)} KB • ${file.type}`;
+        document.getElementById('image-preview-container').classList.remove('hidden');
+        document.getElementById('image-preview-container').classList.add('flex');
+
+        handleImageTabUpdate();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearSelectedImage() {
+      appState.selectedImageFile = null;
+      appState.uploadedCloudUrl = '';
+      document.getElementById('file-input-image').value = '';
+      document.getElementById('image-preview-container').classList.add('hidden');
+      document.getElementById('upload-status-badge').innerText = 'Chưa tải lên';
+      document.getElementById('upload-status-badge').className = 'inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300';
+
+      if(appState.activeTab === 'image') {
+        appState.rawContent = " Vui lòng chọn ảnh để tạo QR";
+        updateQRCode();
+      }
+    }
+
+    function handleImageModeChange() {
+      const mode = document.querySelector('input[name="image-mode"]:checked').value;
+      appState.imageMode = mode;
+
+      const cloudBtn = document.getElementById('cloud-upload-action');
+      if (mode === 'cloud') {
+        cloudBtn.classList.remove('hidden');
+      } else {
+        cloudBtn.classList.add('hidden');
+      }
+
+      handleImageTabUpdate();
+    }
+
+    function handleImageTabUpdate() {
+      if (!appState.selectedImageFile) {
+        appState.rawContent = "https://qr-craft.app/image-placeholder";
+        updateQRCode();
+        return;
+      }
+
+      if (appState.imageMode === 'cloud') {
+        if (appState.uploadedCloudUrl) {
+          appState.rawContent = appState.uploadedCloudUrl;
+        } else {
+          appState.rawContent = "https://qr-craft.app/pending-upload";
+        }
+        updateQRCode();
+      } else {
+        // Offline / Compression mode: compress image to small Base64 Data URL
+        compressAndGenerateBase64(appState.selectedImageFile);
+      }
+    }
+
+    // Compress Image for Base64 QR Code
+    function compressAndGenerateBase64(file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Downscale to max 120px for scannable QR
+          const maxDim = 120;
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Quality compressed JPEG
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+          appState.rawContent = dataUrl;
+          updateQRCode();
+
+          document.getElementById('upload-status-badge').innerText = 'Đã nén mã hóa Offline';
+          document.getElementById('upload-status-badge').className = 'inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300';
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Free Cloud Image Upload (Using ImgBB Free Anonymous Upload API)
+    async function uploadImageToCloud() {
+      if (!appState.selectedImageFile) {
+        showToast("Vui lòng chọn một hình ảnh trước!", "error");
+        return;
+      }
+
+      const uploadBtn = document.getElementById('btn-start-upload');
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Đang tải ảnh lên Cloud...</span>`;
+
+      try {
+        const formData = new FormData();
+        formData.append('image', appState.selectedImageFile);
+
+        // Free ImgBB Public API Key endpoint
+        const response = await fetch('https://api.imgbb.com/1/upload?key=c0e1edef4895ee9a9ca3b30689b71e72', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result && result.success) {
+          appState.uploadedCloudUrl = result.data.url_viewer || result.data.url;
+          appState.rawContent = appState.uploadedCloudUrl;
+          updateQRCode();
+
+          document.getElementById('upload-status-badge').innerText = 'Đã tải lên Cloud';
+          document.getElementById('upload-status-badge').className = 'inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300';
+
+          showToast("Tải ảnh lên thành công! Mã QR đã sẵn sàng.", "success");
+          addToHistory("Hình ảnh Cloud", appState.uploadedCloudUrl);
+        } else {
+          throw new Error("Lỗi khi tải ảnh");
+        }
+      } catch (err) {
+        console.error("Cloud Upload Error:", err);
+        // Fallback to local Blob URL
+        const blobUrl = URL.createObjectURL(appState.selectedImageFile);
+        appState.uploadedCloudUrl = blobUrl;
+        appState.rawContent = blobUrl;
+        updateQRCode();
+
+        document.getElementById('upload-status-badge').innerText = 'Đã tạo Link tạm thời';
+        document.getElementById('upload-status-badge').className = 'inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300';
+        showToast("Đã tạo liên kết tạm thời cho hình ảnh!", "info");
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span>Tải ảnh lên Server Miễn phí & Tạo QR</span>`;
+      }
+    }
+
+    // UPDATE QR CODE ENGINE
+    function updateQRCode() {
+      if (!qrCodeStyling) return;
+
+      // Color values
+      appState.fgColor = document.getElementById('qr-color-fg').value;
+      appState.bgColor = document.getElementById('qr-color-bg').value;
+      appState.isBgTransparent = document.getElementById('qr-bg-transparent').checked;
+      appState.dotStyle = document.getElementById('qr-dot-style').value;
+      appState.ecLevel = document.getElementById('qr-ec-level').value;
+
+      // Update Styling
+      qrCodeStyling.update({
+        data: appState.rawContent || "https://google.com",
+        image: appState.logoUrl,
+        dotsOptions: {
+          color: appState.fgColor,
+          type: appState.dotStyle
+        },
+        backgroundOptions: {
+          color: appState.isBgTransparent ? "transparent" : appState.bgColor,
+        },
+        qrOptions: {
+          errorCorrectionLevel: appState.ecLevel
+        }
+      });
+
+      // Update Live Info Badge
+      const len = (appState.rawContent || "").length;
+      document.getElementById('qr-data-preview-text').innerText = appState.rawContent.substring(0, 50) + (len > 50 ? '...' : '');
+      document.getElementById('qr-data-size-info').innerText = `Độ dài dữ liệu: ${len} ký tự`;
+
+      const badge = document.getElementById('scanability-badge');
+      if (len < 300) {
+        badge.innerText = "Khả năng quét: Rất tốt 🟢";
+        badge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+      } else if (len < 1200) {
+        badge.innerText = "Khả năng quét: Khá 🟡";
+        badge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20";
+      } else {
+        badge.innerText = "Dữ liệu quá dài 🔴";
+        badge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20";
+      }
+    }
+
+    // Color Pickers Helper
+    function applyColorPreset(fg, bg) {
+      document.getElementById('qr-color-fg').value = fg;
+      document.getElementById('qr-color-fg-hex').value = fg;
+      document.getElementById('qr-color-bg').value = bg;
+      document.getElementById('qr-color-bg-hex').value = bg;
+      document.getElementById('qr-bg-transparent').checked = false;
+      updateQRCode();
+    }
+
+    function syncColorInput(type) {
+      if (type === 'fg') {
+        const val = document.getElementById('qr-color-fg-hex').value;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          document.getElementById('qr-color-fg').value = val;
+          updateQRCode();
+        }
+      } else {
+        const val = document.getElementById('qr-color-bg-hex').value;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          document.getElementById('qr-color-bg').value = val;
+          updateQRCode();
+        }
+      }
+    }
+
+    // Logo Presets
+    function setLogoPreset(logoKey) {
+      document.querySelectorAll('.logo-btn').forEach(btn => {
+        btn.className = "logo-btn px-3 py-1.5 rounded-lg text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700";
+      });
+
+      const active = document.getElementById(`logo-preset-${logoKey}`);
+      if(active) active.className = "logo-btn px-3 py-1.5 rounded-lg text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30";
+
+      if (logoKey === 'none') {
+        appState.logoUrl = "";
+      } else if (LOGO_PRESETS[logoKey]) {
+        appState.logoUrl = LOGO_PRESETS[logoKey];
+      }
+      updateQRCode();
+    }
+
+    function handleCustomLogoUpload(e) {
+      if (e.target.files && e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          appState.logoUrl = evt.target.result;
+          updateQRCode();
+          showToast("Đã chèn Logo tùy chỉnh thành công!", "success");
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    }
+
+    // Size Selection
+    function setExportSize(size) {
+      appState.exportSize = size;
+      [256, 512, 1024].forEach(s => {
+        const btn = document.getElementById(`size-btn-${s}`);
+        if (s === size) {
+          btn.className = "size-btn px-2.5 py-1 rounded-lg text-xs bg-indigo-600 text-white font-semibold shadow border border-indigo-500";
+        } else {
+          btn.className = "size-btn px-2.5 py-1 rounded-lg text-xs bg-slate-800 text-slate-400 border border-slate-700";
+        }
+      });
+    }
+
+    // DOWNLOAD ACTIONS
+    function downloadQR(format) {
+      if (!qrCodeStyling) return;
+
+      // Update to export resolution
+      qrCodeStyling.update({
+        width: appState.exportSize,
+        height: appState.exportSize
+      });
+
+      const fileName = `QR_Code_${Date.now()}`;
+      qrCodeStyling.download({
+        name: fileName,
+        extension: format
+      });
+
+      // Reset back to preview resolution
+      setTimeout(() => {
+        qrCodeStyling.update({
+          width: 260,
+          height: 260
+        });
+      }, 500);
+
+      showToast(`Đã tải về mã QR dạng ${format.toUpperCase()} (${appState.exportSize}px)!`, "success");
+      
+      // Save to history
+      let title = appState.activeTab === 'text' ? `Văn bản (${appState.textPreset})` : "Hình ảnh QR";
+      addToHistory(title, appState.rawContent);
+    }
+
+    // COPY TO CLIPBOARD ACTIONS
+    async function copyQRImageToClipboard() {
+      try {
+        qrCodeStyling.getRawData('png').then(async (blob) => {
+          const item = new ClipboardItem({ 'image/png': blob });
+          await navigator.clipboard.write([item]);
+          showToast("Đã sao chép ảnh QR vào bộ nhớ tạm!", "success");
+        });
+      } catch (err) {
+        console.error("Clipboard Error:", err);
+        showToast("Trình duyệt không hỗ trợ sao chép ảnh trực tiếp. Vui lòng chọn Tải về!", "error");
+      }
+    }
+
+    function copyContentToClipboard() {
+      if (!appState.rawContent) return;
+      
+      // Fallback robust copy
+      const tempArea = document.createElement("textarea");
+      tempArea.value = appState.rawContent;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempArea);
+
+      showToast("Đã sao chép nội dung/link dữ liệu!", "success");
+    }
+
+    // HISTORY MANAGEMENT (LocalStorage)
+    function addToHistory(title, content) {
+      if (!content || content.startsWith("https://qr-craft.app/")) return;
+
+      const newItem = {
+        id: Date.now(),
+        title: title,
+        content: content,
+        date: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + " " + new Date().toLocaleDateString('vi-VN')
+      };
+
+      // Limit to 10 history items
+      appState.history.unshift(newItem);
+      if (appState.history.length > 10) appState.history.pop();
+
+      saveHistoryToStorage();
+      renderHistoryUI();
+    }
+
+    function renderHistoryUI() {
+      const container = document.getElementById('history-list');
+      const emptyText = document.getElementById('history-empty-text');
+
+      if (!appState.history || appState.history.length === 0) {
+        container.innerHTML = '';
+        container.appendChild(emptyText);
+        emptyText.classList.remove('hidden');
+        return;
+      }
+
+      emptyText.classList.add('hidden');
+      container.innerHTML = '';
+
+      appState.history.forEach(item => {
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all text-xs";
+        
+        div.innerHTML = `
+          <div class="flex-1 min-w-0 mr-2">
+            <div class="flex items-center gap-1.5">
+              <span class="font-semibold text-slate-200 truncate">${item.title}</span>
+              <span class="text-[10px] text-slate-500">• ${item.date}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">${item.content}</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="reloadHistoryItem('${item.id}')" title="Sử dụng lại" class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition-colors">
+              <i class="fa-solid fa-arrow-rotate-left"></i>
+            </button>
+            <button onclick="deleteHistoryItem('${item.id}')" title="Xóa" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition-colors">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function reloadHistoryItem(id) {
+      const item = appState.history.find(h => h.id == id);
+      if (!item) return;
+
+      switchTab('text');
+      setTextPreset('text');
+      document.getElementById('input-text').value = item.content;
+      handleTextFormChange();
+      showToast("Đã khôi phục dữ liệu mã QR!", "info");
+    }
+
+    function deleteHistoryItem(id) {
+      appState.history = appState.history.filter(h => h.id != id);
+      saveHistoryToStorage();
+      renderHistoryUI();
+      showToast("Đã xóa khỏi lịch sử!", "info");
+    }
+
+    function clearHistory() {
+      appState.history = [];
+      saveHistoryToStorage();
+      renderHistoryUI();
+      showToast("Đã xóa toàn bộ lịch sử!", "info");
+    }
+
+    function saveHistoryToStorage() {
+      try {
+        localStorage.setItem('qr_craft_history', JSON.stringify(appState.history));
+      } catch(e) {}
+    }
+
+    function loadHistoryFromStorage() {
+      try {
+        const saved = localStorage.getItem('qr_craft_history');
+        if (saved) {
+          appState.history = JSON.parse(saved);
+          renderHistoryUI();
+        }
+      } catch(e) {}
+    }
+
+    // Reset All Fields
+    function resetAllFields() {
+      document.getElementById('input-url').value = "https://google.com";
+      document.getElementById('input-text').value = "";
+      document.getElementById('wifi-ssid').value = "";
+      document.getElementById('wifi-password').value = "";
+      document.getElementById('vcard-name').value = "";
+      document.getElementById('vcard-phone').value = "";
+      document.getElementById('email-to').value = "";
+
+      clearSelectedImage();
+      applyColorPreset('#000000', '#ffffff');
+      setLogoPreset('none');
+      switchTab('text');
+      setTextPreset('url');
+
+      showToast("Đã làm mới tất cả thông số!", "info");
+    }
+
+    // Toast Notification Banner
+    function showToast(message, type = "info") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      let bgClass = "bg-slate-900 border-indigo-500/50 text-indigo-200";
+      let icon = '<i class="fa-solid fa-circle-info text-indigo-400"></i>';
+
+      if (type === 'success') {
+        bgClass = "bg-slate-900 border-emerald-500/50 text-emerald-200";
+        icon = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+      } else if (type === 'error') {
+        bgClass = "bg-slate-900 border-rose-500/50 text-rose-200";
+        icon = '<i class="fa-solid fa-circle-exclamation text-rose-400"></i>';
+      }
+
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border ${bgClass} shadow-2xl flex items-center gap-3 text-xs font-semibold transform transition-all duration-300 translate-x-12 opacity-0`;
+      toast.innerHTML = `${icon} <span>${message}</span>`;
+
+      container.appendChild(toast);
+
+      // Trigger animation
+      setTimeout(() => {
+        toast.classList.remove('translate-x-12', 'opacity-0');
+      }, 10);
+
+      // Auto dismiss after 3 seconds
+      setTimeout(() => {
+        toast.classList.add('translate-x-12', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
